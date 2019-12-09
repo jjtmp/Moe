@@ -11,9 +11,9 @@ LLVM_MODULES = analysis asmparser asmprinter binaryformat codegen debuginfodwarf
 LLVM_CFLAGS = `$(LLVM_BIN_PATH)/llvm-config --cppflags`
 LLVM_LIBS = `$(LLVM_BIN_PATH)/llvm-config --libs $(LLVM_MODULES)`
 
-CC=clang++
+CC=gcc
 AR=ar
-CFLAGS= -MMD -Wall -Werror -std=c++11 -I ../external $(LLVM_CFLAGS)
+CFLAGS= -MMD -Wall -Werror -std=c++11 -I ../external  -I /usr/include/llvm-c-7 -I /usr/include/llvm-7
 SOURCES=LlvmcDiBuilder.cpp
 OBJECTS=$(SOURCES:%.cpp=$(BUILD_DIR)/%.o)
 
@@ -36,7 +36,8 @@ print-%  : ; @echo $* = $($*)
 $(LIBRARY): $(OBJECTS)
 	$(AR) -q $(LIBRARY) $(OBJECTS)
 
-%.o : ../%.cpp
+$(BUILD_DIR)/%.o: %.cpp
+	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@	
 
 clean:
