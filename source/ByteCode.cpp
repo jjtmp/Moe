@@ -1509,7 +1509,7 @@ CBuilder::Instruction * CBuilder::PInstCreateGEP(SValue * pValLhs, SValue ** apL
 				if (pTinstruct)
 				{
 					EWC_ASSERT(pConst->m_litty.m_cBit == 32 && pConst->m_litty.m_fIsSigned == false, "unexpected int type");
-					if (EWC_FVERIFY(pConst->m_word.m_u64 < pTinstruct->m_aryTypemembField.C()))
+					if (EWC_FVERIFY(pConst->m_word.m_u64 < pTinstruct->m_aryTypemembField.C(), "??"))
 					{
 						auto pTypememb = &pTinstruct->m_aryTypemembField[pConst->m_word.m_u64];
 						dBOffset += pTypememb->m_dBOffset;
@@ -1519,7 +1519,7 @@ CBuilder::Instruction * CBuilder::PInstCreateGEP(SValue * pValLhs, SValue ** apL
 				else if (pTinaryRef)
 				{
 					EWC_ASSERT(pConst->m_litty.m_cBit == 32 && pConst->m_litty.m_fIsSigned == false, "unexpected int type");
-					if (EWC_FVERIFY(pConst->m_word.m_u64 < ARYMEMB_Max))
+					if (EWC_FVERIFY(pConst->m_word.m_u64 < ARYMEMB_Max, "??"))
 					{
 						switch (ARYMEMB(pConst->m_word.m_u64))
 						{
