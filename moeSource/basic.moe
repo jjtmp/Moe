@@ -119,7 +119,7 @@ PVAllocDefault proc (allock: ALLOCK, cB: uSize, cBPrev: uSize, pVPrev: & void, p
     }
     else 
     {
-        assert(false, "unhanadled ALLOCK ", #file, #line)
+        assert(false, "unhandled ALLOCK ", #file, #line)
     }
 
     return null
@@ -163,7 +163,7 @@ SIntIterator struct
 
 iterMake proc (iBegin: int, nMax: int) -> SIntIterator
 {
-    iter : SIntIterator
+    iter : SIntIterator = ---
     iter.m_i = iBegin
     iter.m_nMax = nMax
     return iter
@@ -188,7 +188,7 @@ iterIsDone proc (ppCoz: && const u8) -> bool
 iterNext proc (ppCoz: && const u8)
 {
     pCoz := @ppCoz
-    pCozEnd : & const u8
+    pCozEnd : & const u8 = ---
 
     if ((@pCoz & 0xF8) == 0xF0)         { pCozEnd = pCoz + 4 }
     else if ((@pCoz & 0xF0) == 0xE0)    { pCozEnd = pCoz + 3 }
