@@ -10,6 +10,8 @@
 #include <signal.h>
 #include <Windows.h>
 #include <memoryapi.h>
+#elif defined ( __unix__ ) or defined ( __linux__ )
+#include <signal.h>
 #endif
 
 MOE_EXPORT void * PVMalloc(size_t cB)
@@ -26,7 +28,7 @@ MOE_EXPORT void * PVVirtualMalloc(void * pV, size_t cB, uint32_t flAllocationTyp
 {
 #ifdef _WINDOWS
 	return VirtualAlloc(pV, cB, flAllocationType, flProtect);
-#elif
+#else
 	return malloc(cB);
 #endif
 }
@@ -35,7 +37,7 @@ MOE_EXPORT void VirtualFreeMalloc(void * pV, size_t cB, uint32_t dwFreeType)
 {
 #ifdef _WINDOWS
 	VirtualFree(pV, cB, dwFreeType);
-#elif
+#else
 	return free(pV);
 #endif
 }
@@ -44,6 +46,8 @@ MOE_EXPORT void DebugBreak_MOE()
 {
 #ifdef _WINDOWS
 	__debugbreak();
+#elif defined ( __unix__ ) or defined ( __linux__ )
+	raise(SIGSTOP);
 #else
 	raise(SIGTRAP);
 #endif
