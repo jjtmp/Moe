@@ -1,0 +1,14 @@
+
+# built files
+source/moe
+source/build
+external/MissingLlvmC/build
+moeSource/helloworld
+
+# Vim swap files
+.*.swp
+*.o
+
+# other
+.gdb_history
+
