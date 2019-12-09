@@ -252,7 +252,7 @@ static int TokLexHereString(SLexer * pLex, const char * pChz)
 	++pChz; // skip the newline
 	const char * pChzStart = pChz;
 
-	ptrdiff_t cChDelim = pChzDelimEnd - pChzDelim;
+	std::ptrdiff_t cChDelim = pChzDelimEnd - pChzDelim;
 	int cChMatch = 0;
 	const char * pChzLine = pChz;
 	while (1)

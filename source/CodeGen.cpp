@@ -43,7 +43,7 @@ using namespace EWC;
 #pragma warning ( pop )
 #endif
 
-#include "MissingLlvmC/llvmcDIBuilder.h"
+#include "MissingLlvmC/LlvmcDIBuilder.h"
 #include <stdio.h>
 #include <string>
 
@@ -2871,7 +2871,7 @@ typename BUILD::LValue * PLvalFromLiteral(BUILD * pBuild, STypeInfoLiteral * pTi
 
 	// NOTE: if we're implicit casting literals the STValue's kind won't match the literal kind!
 
-	BUILD::LValue * pLval = nullptr;
+	typename BUILD::LValue * pLval = nullptr;
 	switch (pTinlit->m_litty.m_litk)
 	{
 	case LITK_Integer:
@@ -2986,8 +2986,8 @@ typename BUILD::LValue * PLvalFromLiteral(BUILD * pBuild, STypeInfoLiteral * pTi
 					if (!EWC_FVERIFY(pStnodList, "missing values for array literal"))
 						return nullptr;
 
-					size_t cB = sizeof(BUILD::LValue *) * (size_t)pTinlit->m_c;
-					auto apLval = (BUILD::LValue **)(alloca(cB));
+					size_t cB = sizeof(typename BUILD::LValue *) * (size_t)pTinlit->m_c;
+					auto apLval = (typename BUILD::LValue **)(alloca(cB));
 
 					auto pTinary = PTinRtiCast<STypeInfoArray *>(pTinSource);
 					if (!EWC_FVERIFY(pTinary, "expected array type for array literal"))
@@ -3295,7 +3295,7 @@ typename BUILD::Value * PValCreateCast(
 	if (!FExtractNumericInfo(pTinDst, &cBitDst, &fSignedDst))
 		return nullptr;
 
-	BUILD::Instruction * pInst = nullptr;
+	typename BUILD::Instruction * pInst = nullptr;
 	switch (pTinDst->m_tink)
 	{
 	case TINK_Integer:
@@ -3440,10 +3440,10 @@ CIRInstruction * CBuilderIR::PInstCreateMemset(CIRValue * pValLhs, s64 cBSize, s
 	apLvalArgs[0] = LLVMBuildBitCast(m_pLbuild, pValLhs->m_pLval, pLtypePInt8, OPNAME("memDst")); // dest
 	apLvalArgs[1] = LLVMConstInt(LLVMInt8Type(), bFill, false);		// bFill
 	apLvalArgs[2] =	LLVMConstInt(LLVMInt64Type(), cBSize, false);		// cB
-	apLvalArgs[3] =	LLVMConstInt(LLVMInt32Type(), cBAlign, false);	// cBAlign
+	apLvalArgs[3] =	LLVMConstInt(LLVMInt32Type(), cBAlign, false);	// cBAlign // TODO: Reactivate, this is just for fast checking! /Jonas
 	apLvalArgs[4] = LLVMConstInt(LLVMInt1Type(), false, false);	// fIsVolitile
 
-	CIRInstruction * pInstMemcpy = PInstCreateRaw(IROP_Memset, nullptr, nullptr, "memcpy");
+	CIRInstruction * pInstMemcpy = PInstCreateRaw(IROP_Memset, nullptr, nullptr, "memcpy"); // why not memset? -> name is ignrd.
 	pInstMemcpy->m_pLval = LLVMBuildCall(
 							m_pLbuild,
 							m_mpIntfunkPLval[INTFUNK_Memset],
@@ -3459,7 +3459,7 @@ typename BUILD::Instruction * PInstCreateLoopingInit(CWorkspace * pWork, BUILD *
 	// This should be an arry, we need to loop over the elements and either memcpy a global or call an 
 	//  initializer proc:
 		
-	BUILD::Proc * pProc = pBuild->m_pProcCur;
+	typename BUILD::Proc * pProc = pBuild->m_pProcCur;
 	auto pTinary = (STypeInfoArray *)pTin;
 	EWC_ASSERT(pTinary->m_aryk == ARYK_Fixed, "unexpected ARYK");
 
@@ -3473,9 +3473,9 @@ typename BUILD::Instruction * PInstCreateLoopingInit(CWorkspace * pWork, BUILD *
 
 	pBuild->PInstCreateStore(pValAlloca, pLvalZero);
 
-	BUILD::Block *	pBlockPred = pBuild->PBlockCreate(pProc, "initPred");
-	BUILD::Block *	pBlockBody = pBuild->PBlockCreate(pProc, "initBody");
-	BUILD::Block * pBlockPost = pBuild->PBlockCreate(pProc, "initPost");
+	typename BUILD::Block *	pBlockPred = pBuild->PBlockCreate(pProc, "initPred");
+	typename BUILD::Block *	pBlockBody = pBuild->PBlockCreate(pProc, "initBody");
+	typename BUILD::Block * pBlockPost = pBuild->PBlockCreate(pProc, "initPost");
 
 	pBuild->CreateBranch(pBlockPred);	
 
@@ -3486,7 +3486,7 @@ typename BUILD::Instruction * PInstCreateLoopingInit(CWorkspace * pWork, BUILD *
 	(void) pBuild->PInstCreateCondBranch(pLvalCmp, pBlockBody, pBlockPost);
 	pBuild->ActivateBlock(pBlockBody);
 
-	BUILD::GepIndex * apLvalIndex[2] = {};
+	typename BUILD::GepIndex * apLvalIndex[2] = {};
 	apLvalIndex[0] = pBuild->PGepIndex(0);
 	apLvalIndex[1] = pBuild->PGepIndexFromValue(pLvalLoadIndex);
 	auto pInstGEP = pBuild->PInstCreateGEP(pValLhs, apLvalIndex, 2, "initGEP");
@@ -3512,8 +3512,8 @@ typename BUILD::LValue * PLvalBuildConstantInitializer(BUILD * pBuild, STypeInfo
 		auto pTinstruct = PTinDerivedCast<STypeInfoStruct *>(pTin);
 
 		int cTypememb = (int)pTinstruct->m_aryTypemembField.C();
-		size_t cB = sizeof(BUILD::LValue *) * cTypememb;
-		auto apLvalMember = (BUILD::LValue **)(alloca(cB));
+		size_t cB = sizeof(typename BUILD::LValue *) * cTypememb;
+		auto apLvalMember = (typename BUILD::LValue **)(alloca(cB));
 		EWC::ZeroAB(apLvalMember, cB);
 
 		CSTNode * pStnodStruct = pTinstruct->m_pStnodStruct;
@@ -3564,7 +3564,7 @@ typename BUILD::LValue * PLvalBuildConstantInitializer(BUILD * pBuild, STypeInfo
 			STypeStructMember * pTypememb = &pTinstruct->m_aryTypemembField[iTypememb];
 			CSTNode * pStnodDecl = pTypememb->m_pStnod;
 
-			BUILD::LValue * pLvalMember = nullptr;
+			typename BUILD::LValue * pLvalMember = nullptr;
 			auto pStnodInitMemb = arypStnodInit[iTypememb];
 
 			// no explicit initializer, see if struct has an inital value
@@ -3619,14 +3619,14 @@ typename BUILD::LValue * PLvalBuildConstantInitializer(BUILD * pBuild, STypeInfo
 					if (cginitk == CGINITK_MemcpyGlobal)
 					{
 						auto pLvalInit = PLvalBuildConstantInitializer(pBuild, pTinary->m_pTin, nullptr);
-						auto apLval = (BUILD::LValue **)pBuild->m_pAlloc->EWC_ALLOC_TYPE_ARRAY(BUILD::LValue*, (size_t)pTinary->m_c);
+						auto apLval = (typename BUILD::LValue **)pBuild->m_pAlloc->EWC_ALLOC_TYPE_ARRAY(typename BUILD::LValue*, (size_t)pTinary->m_c);
 
 						for (s64 iElement = 0; iElement < pTinary->m_c; ++iElement)
 						{
 							apLval[iElement] = pLvalInit;
 						}
 
-						BUILD::LType * pLtypeElement = pBuild->PLtypeFromPTin(pTinary->m_pTin);
+						typename BUILD::LType * pLtypeElement = pBuild->PLtypeFromPTin(pTinary->m_pTin);
 
 						auto pLvalReturn = pBuild->PLvalConstantArray(pLtypeElement, apLval, u32(pTinary->m_c));
 						pBuild->m_pAlloc->EWC_DELETE(apLval);
@@ -3787,7 +3787,7 @@ static inline typename BUILD::Value * PValInitialize(
 
 			if (pStnodInit && pStnodInit->m_park != PARK_Uninitializer)
 			{
-				BUILD::Value * pValInit;
+				typename BUILD::Value * pValInit;
 				if (pStnodInit->m_pTin->m_tink == TINK_Literal)
 				{
 					auto strName = pTin->m_strName;
@@ -3831,7 +3831,7 @@ static inline typename BUILD::Value * PValInitialize(
 					pCgstruct->m_pGlobInit = pGlobInit;
 				}
 
-				return pBuild->PInstCreateMemcpy(pTin, pValPT, (BUILD::Global*)pCgstruct->m_pGlobInit);
+				return pBuild->PInstCreateMemcpy(pTin, pValPT, (typename BUILD::Global*)pCgstruct->m_pGlobInit);
 			}
 		} break;
 	case CGINITK_LoopingInit:
@@ -3860,7 +3860,7 @@ static inline typename BUILD::Value * PValInitialize(
 				if (!EWC_FVERIFY(CParamFromProc(pProcInit) == 1, "unexpected number of arguments"))
 					return nullptr;
 
-				BUILD::LValue * apLvalArgs[1];
+				typename BUILD::LValue * apLvalArgs[1];
 				apLvalArgs[0] = BUILD::PProcArg(pValPT);
 
 				auto pInst = pBuild->PInstCreateCall(PLvalFromPVal(pProcInit), pTinstruct->m_pTinprocInit, apLvalArgs, 1);
@@ -3900,7 +3900,7 @@ typename BUILD::Value * PValFromArrayMember(
 		return pBuild->PInstCreateCast(IROP_Bitcast, pValAryRef, pTinptr, "Bitcast");
 	}
 
-	BUILD::GepIndex * apLvalIndex[2] = {};
+	typename BUILD::GepIndex * apLvalIndex[2] = {};
 	apLvalIndex[0] = pBuild->PGepIndex(0);
 	apLvalIndex[1] = pBuild->PGepIndex(arymemb);
 	auto pValRef = pBuild->PInstCreateGEP(pValAryRef, apLvalIndex, EWC_DIM(apLvalIndex), "aryGep");
@@ -3932,6 +3932,9 @@ CBuilderIR::LValue * CBuilderIR::PLvalConstCast(IROP irop, LValue * pLvalLhs, ST
 
 	return nullptr;
 }
+
+// Quick fix for compiler error
+static bool FIsArrayLiteral(STypeInfoLiteral * pTinlit);
 
 template <typename BUILD>
 static inline typename BUILD::LValue * PLvalGenerateConstCast(
@@ -4016,7 +4019,7 @@ static inline typename BUILD::Value * PValGenerateCast(
 		}
 	}
 
-	BUILD::Value * pValRhs = nullptr;
+	typename BUILD::Value * pValRhs = nullptr;
 	if (rhsIsArray)
 	{
 		auto pValRhsRef = PValGenerate(pWork, pBuild, pStnodRhs, VALGENK_Reference);
@@ -4170,7 +4173,7 @@ typename BUILD::Instruction * PInstGenerateAssignmentFromRef(
 				{
 					EWC_ASSERT(arykRhs == ARYK_Fixed, "cannot copy mixed array kinds to fixed array");
 
-					BUILD::Proc * pProc = pBuild->m_pProcCur;
+					typename BUILD::Proc * pProc = pBuild->m_pProcCur;
 
 					auto pValZero = pBuild->PConstInt(0, 64, false);
 					auto pValOne = pBuild->PConstInt(0, 64, false);
@@ -4182,9 +4185,9 @@ typename BUILD::Instruction * PInstGenerateAssignmentFromRef(
 					auto pValAlloca = pBuild->PValCreateAlloca(pLtypeS64, "iInit");
 					(void) pBuild->PInstCreateStore(pValAlloca, pValZero);
 
-					BUILD::Block * pBlockPred = pBuild->PBlockCreate(pProc, "copyPred");
-					BUILD::Block * pBlockBody = pBuild->PBlockCreate(pProc, "copyBody");
-					BUILD::Block * pBlockPost = pBuild->PBlockCreate(pProc, "copyPost");
+					typename BUILD::Block * pBlockPred = pBuild->PBlockCreate(pProc, "copyPred");
+					typename BUILD::Block * pBlockBody = pBuild->PBlockCreate(pProc, "copyBody");
+					typename BUILD::Block * pBlockPost = pBuild->PBlockCreate(pProc, "copyPost");
 
 					pBuild->CreateBranch(pBlockPred);	
 
@@ -4196,7 +4199,7 @@ typename BUILD::Instruction * PInstGenerateAssignmentFromRef(
 
 					pBuild->ActivateBlock(pBlockBody);
 
-					BUILD::LValue * apLvalIndex[2] = {};
+					typename BUILD::LValue * apLvalIndex[2] = {};
 					apLvalIndex[0] = pBuild->PLvalConstantInt(0, 32, false);
 					apLvalIndex[1] = PLvalFromPVal(pInstLoadIndex);
 					auto pInstGEPLhs = pBuild->PInstCreateGEP(pValLhs, apLvalIndex, 2, "GEPLhs");
@@ -4215,11 +4218,11 @@ typename BUILD::Instruction * PInstGenerateAssignmentFromRef(
 				} break;
 			case ARYK_Reference:
 				{
-					BUILD::LValue * apLvalIndex[2] = {};
+					typename BUILD::LValue * apLvalIndex[2] = {};
 					apLvalIndex[0] = pBuild->PLvalConstantInt(0, 32, false);
 
-					BUILD::Value * pValCount = nullptr;
-					BUILD::Value * pValData = nullptr;
+					typename BUILD::Value * pValCount = nullptr;
+					typename BUILD::Value * pValData = nullptr;
 					switch (arykRhs)
 					{
 					case ARYK_Fixed:
@@ -4366,7 +4369,7 @@ void GeneratePredicate(
 	CSTNode * pStnodOp = pStnodPred;
 	if (pStnodOp->m_park == PARK_LogicalAndOrOp)
 	{
-		BUILD::Block *	pBlockRhs = pBuild->PBlockCreate(pBuild->m_pProcCur, "predRhs");
+		typename BUILD::Block *	pBlockRhs = pBuild->PBlockCreate(pBuild->m_pProcCur, "predRhs");
 		EWC_ASSERT(pStnodOp->CStnodChild() == 2, "expected two children for logical op");
 
 		auto pStnodChildLhs = pStnodPred->PStnodChild(0);
@@ -4391,8 +4394,8 @@ void GeneratePredicate(
 	}
 	else
 	{
-		BUILD::Value * pValPred = PValGenerate(pWork, pBuild, pStnodPred, VALGENK_Instance);
-		BUILD::Value * pValPredCast = PValCreateCast(pWork, pBuild, pValPred, pStnodPred->m_pTin, pTinBool);
+		typename BUILD::Value * pValPred = PValGenerate(pWork, pBuild, pStnodPred, VALGENK_Instance);
+		typename BUILD::Value * pValPredCast = PValCreateCast(pWork, pBuild, pValPred, pStnodPred->m_pTin, pTinBool);
 		if (!pValPredCast)
 		{
 			EmitError(pWork, &pStnodPred->m_lexloc, ERRID_BadCastGen, 
@@ -4847,7 +4850,7 @@ static inline typename BUILD::Instruction * PInstGenerateOperator(
 		return nullptr;
 	}
 
-	BUILD::Instruction * pInstOp = nullptr;
+	typename BUILD::Instruction * pInstOp = nullptr;
 	switch (opinfo.m_irop)
 	{
 	case IROP_GEP:		// for pointer arithmetic
@@ -5024,7 +5027,7 @@ typename BUILD::Value * PValGenerateDecl(
 
 		DInfoCreateGlobalVariable(pBuild, pStnod->m_pTin, pLvalScope, pDif, strName.PCoz(), strPunyName.PCoz(), iLine, true, pGlob);
 
-		BUILD::LValue * pLvalInit = nullptr;
+		typename BUILD::LValue * pLvalInit = nullptr;
 		if (pStnodInit)
 		{
 			auto pTinlit = PTinRtiCast<STypeInfoLiteral *>(pStnodInit->m_pTin);
@@ -5080,7 +5083,7 @@ typename BUILD::Value * PValGenerateDecl(
 			if (EWC_FVERIFY(pStdecl && pStdecl->m_iStnodIdentifier >= 0 && pStdecl->m_iStnodInit >= 0,
 					"bad declaration"))
 			{
-				CDynAry<BUILD::ProcArg *> arypLvalArgs(pBuild->m_pAlloc, EWC::BK_Stack);
+				CDynAry<typename BUILD::ProcArg *> arypLvalArgs(pBuild->m_pAlloc, EWC::BK_Stack);
 
 				auto pTinproc = pStnod->m_pOptype->m_pTinprocOverload;
 
@@ -5119,8 +5122,8 @@ typename BUILD::Value * PValGenerateArrayLiteralReference(CWorkspace * pWork, BU
 	if (!EWC_FVERIFY(pTinlit->m_litty.m_litk == LITK_Compound, "expected array literal"))
 		return nullptr;
 
-	BUILD::Global * pGlob = nullptr;
-	BUILD::Global ** ppGlob = pBuild->m_hashPTinlitPGlob.Lookup(pTinlit);
+	typename BUILD::Global * pGlob = nullptr;
+	typename BUILD::Global ** ppGlob = pBuild->m_hashPTinlitPGlob.Lookup(pTinlit);
 	if (ppGlob)
 	{
 		pGlob = *ppGlob;
@@ -5208,7 +5211,7 @@ void GenerateArguments(
 			pTinParam = pTinproc->m_arypTinParams[ipStnodChildAdj];
 		}
 
-		BUILD::Value * pValRhsCast = nullptr;
+		typename BUILD::Value * pValRhsCast = nullptr;
 		if (ipStnodChild < pTinproc->m_mpIptinGrfparmq.C() && 
 			pTinproc->m_mpIptinGrfparmq[ipStnodChild].FIsSet(FPARMQ_ImplicitRef))
 		{
@@ -5389,7 +5392,7 @@ BCode::SValue * PValGenerateTypeInfo(BCode::CBuilder * pBuild, CSTNode * pStnod,
 template <typename BUILD>
 void GenerateSwitch(CWorkspace * pWork, BUILD * pBuild, CSTNode * pStnod, typename BUILD::Value * pValExp)
 {
-	BUILD::Proc * pProc = pBuild->m_pProcCur;
+	typename BUILD::Proc * pProc = pBuild->m_pProcCur;
 	auto pBlockPost = pBuild->PBlockCreate(pProc, "PostSw");
 	auto pBlockDefault = pBlockPost;
 
@@ -5402,8 +5405,8 @@ void GenerateSwitch(CWorkspace * pWork, BUILD * pBuild, CSTNode * pStnod, typena
 		pJumpt->m_strLabel = pStnod->m_pStident->m_str;
 	}
 
-	CDynAry<BUILD::Value *> arypVal(pBuild->m_pAlloc, BK_CodeGen, pStnod->CStnodChild()-1);
-	CDynAry<BUILD::Block *> arypBlock(pBuild->m_pAlloc, BK_CodeGen, pStnod->CStnodChild()-1);
+	CDynAry<typename BUILD::Value *> arypVal(pBuild->m_pAlloc, BK_CodeGen, pStnod->CStnodChild()-1);
+	CDynAry<typename BUILD::Block *> arypBlock(pBuild->m_pAlloc, BK_CodeGen, pStnod->CStnodChild()-1);
 
 	u32 cStnodCase = 0;
 	for (int iStnodChild = 1; iStnodChild < pStnod->CStnodChild(); ++iStnodChild)
@@ -5442,7 +5445,7 @@ void GenerateSwitch(CWorkspace * pWork, BUILD * pBuild, CSTNode * pStnod, typena
 
 		RWORD rword = pStnodCase->m_pStval->m_rword;
 
-		BUILD::Block * pBlockBody = nullptr;
+		typename BUILD::Block * pBlockBody = nullptr;
 		CSTNode * pStnodBody = nullptr;
 		switch (rword)
 		{
@@ -5530,7 +5533,7 @@ static inline bool FIsNull(BCode::SValue * pVal)
 template <typename BUILD>
 typename BUILD::Value * PValFromIdentifierSym(CWorkspace * pWork, BUILD * pBuild, SSymbol * pSymIdent, VALGENK valgenk)
 {
-	BUILD::Value * pVal = pBuild->PValFromSymbol(pSymIdent);
+	typename BUILD::Value * pVal = pBuild->PValFromSymbol(pSymIdent);
 
 	if (!pVal)
 	{
@@ -5579,7 +5582,7 @@ typename BUILD::Value * PValGenerateSymbolPath(
 	for (auto ppSymRhs = ppSymMin; ppSymRhs != ppSymMax; ++ppSymRhs)
 	{
 		// check the symbol because we need to differentiate between enum namespacing and enum struct member.
-		BUILD::Constant * pConstEnum = nullptr;
+		typename BUILD::Constant * pConstEnum = nullptr;
 
 		auto pSymRhs = *ppSymRhs;
 		
@@ -5652,7 +5655,7 @@ typename BUILD::Value * PValGenerateSymbolPath(
 			return nullptr;
 		auto pTypememb = &pTinstruct->m_aryTypemembField[iTypememb];
 
-		BUILD::GepIndex * apLvalIndex[3] = {};
+		typename BUILD::GepIndex * apLvalIndex[3] = {};
 		int cpLvalIndex = 0;
 		apLvalIndex[cpLvalIndex++] = pBuild->PGepIndex(0);
 		apLvalIndex[cpLvalIndex++] = pBuild->PGepIndex(pTinstruct->m_aryTypemembField.IFromP(pTypememb));
@@ -5685,7 +5688,7 @@ typename BUILD::Instruction * PInstGepFromSymbolList(
 	STypeInfo * pTinLhs,
 	VALGENK valgenk)
 {
-	BUILD::Instruction * pInstRet = nullptr;
+	typename BUILD::Instruction * pInstRet = nullptr;
 	for (auto ppSym = ppSymBegin; ppSym != ppSymEnd; ++ppSym)	
 	{
 		auto pSym = *ppSym;
@@ -5704,13 +5707,13 @@ typename BUILD::Instruction * PInstGepFromSymbolList(
 		if (!EWC_FVERIFY(pTinstruct, "missing type structure in symbol path for %s", pSym->m_strName.PCoz()))
 			return nullptr;
 
-		int iTypememb = PTypemembLookup(pTinstruct, pSym->m_strName);
+		int iTypememb = ITypemembLookup(pTinstruct, pSym->m_strName);
 		if (!EWC_FVERIFY(iTypememb >= 0, "cannot find structure member %s", pSym->m_strName.PCoz()))
 			return nullptr;
 		auto pTypememb = &pTinstruct->m_aryTypemembField[iTypememb];
 
 
-		BUILD::GepIndex * apLvalIndex[3] = {};
+		typename BUILD::GepIndex * apLvalIndex[3] = {};
 		int cpLvalIndex = 0;
 		apLvalIndex[cpLvalIndex++] = pBuild->PGepIndex(0);
 		apLvalIndex[cpLvalIndex++] = pBuild->PGepIndex(pTinstruct->m_aryTypemembField.IFromP(pTypememb));
@@ -5770,7 +5773,7 @@ typename BUILD::Instruction * PInstGepFromSymbase(
 	STypeInfo * pTinLhs,
 	VALGENK valgenk)
 {
-	BUILD::Instruction * pInstRet = nullptr;
+	typename BUILD::Instruction * pInstRet = nullptr;
 
 	SSymbol ** ppSymBegin;
 	SSymbol ** ppSymEnd;
@@ -5915,7 +5918,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 
 			if (pValProc && pValProc->m_valk == VALK_Procedure && !pTinproc->FIsForeign())
 			{
-				auto pProc = (BUILD::Proc *)pValProc;
+				auto pProc = (typename BUILD::Proc *)pValProc;
 				if (EWC_FVERIFY(pTinproc, "procedure missing tinproc") &&
 					EWC_FVERIFY(pStproc && pProc->m_pBlockFirst, "Encountered procedure without CSTProcedure"))
 				{
@@ -6065,8 +6068,8 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 					if (pStnod->CStnodChild() < 2)
 						return nullptr;
 
-					BUILD::Proc * pProc = pBuild->m_pProcCur;
-					BUILD::Block * pBlockPost = nullptr;	
+					typename BUILD::Proc * pProc = pBuild->m_pProcCur;
+					typename BUILD::Block * pBlockPost = nullptr;	
 					CSTNode * pStnodCur = pStnod;
 
 					while (pStnodCur)
@@ -6078,8 +6081,8 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 
 						STypeInfo * pTinBool = pStnodIf->m_pTin;
 
-						BUILD::Block *	pBlockTrue = pBuild->PBlockCreate(pProc, "ifThen");
-						BUILD::Block * pBlockFalse = nullptr;
+						typename BUILD::Block *	pBlockTrue = pBuild->PBlockCreate(pProc, "ifThen");
+						typename BUILD::Block * pBlockFalse = nullptr;
 						pStnodCur = nullptr;
 						CSTNode * pStnodElseChild = nullptr;
 						if (pStnodIf->CStnodChild() == 3)
@@ -6156,18 +6159,18 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 						(void) PValGenerate(pWork, pBuild, pStnodFor->PStnodChild(pStfor->m_iStnodDecl), VALGENK_Instance);
 					}
 
-					BUILD::Proc * pProc = pBuild->m_pProcCur;
-					BUILD::Block *	pBlockBody = pBuild->PBlockCreate(pProc, "fbody");
-					BUILD::Block * pBlockPost = pBuild->PBlockCreate(pProc, "fpost");
+					typename BUILD::Proc * pProc = pBuild->m_pProcCur;
+					typename BUILD::Block *	pBlockBody = pBuild->PBlockCreate(pProc, "fbody");
+					typename BUILD::Block * pBlockPost = pBuild->PBlockCreate(pProc, "fpost");
 
-					BUILD::Block *	pBlockPred = pBlockBody;
+					typename BUILD::Block *	pBlockPred = pBlockBody;
 					CSTNode * pStnodPred = pStnodFor->PStnodChildSafe(pStfor->m_iStnodPredicate);
 					if (pStnodPred)
 					{
 						pBlockPred = pBuild->PBlockCreate(pProc, "fpred");
 					}
 
-					BUILD::Block * pBlockIncrement = pBlockPred;
+					typename BUILD::Block * pBlockIncrement = pBlockPred;
 					CSTNode * pStnodIncrement = pStnodFor->PStnodChildSafe(pStfor->m_iStnodIncrement);
 					if (pStnodIncrement)
 					{
@@ -6232,11 +6235,11 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 						(void) PInstGenerateAssignment(pWork, pBuild, pStnodIterator->m_pTin, pValIterator, pStnodInit);
 					}
 
-					BUILD::Proc * pProc = pBuild->m_pProcCur;
-					BUILD::Block *	pBlockPred = pBuild->PBlockCreate(pProc, "fpred");
-					BUILD::Block *	pBlockBody = pBuild->PBlockCreate(pProc, "fbody");
-					BUILD::Block * pBlockPost = pBuild->PBlockCreate(pProc, "fpost");
-					BUILD::Block * pBlockIncrement = pBuild->PBlockCreate(pProc, "finc");
+					typename BUILD::Proc * pProc = pBuild->m_pProcCur;
+					typename BUILD::Block *	pBlockPred = pBuild->PBlockCreate(pProc, "fpred");
+					typename BUILD::Block *	pBlockBody = pBuild->PBlockCreate(pProc, "fbody");
+					typename BUILD::Block * pBlockPost = pBuild->PBlockCreate(pProc, "fpost");
+					typename BUILD::Block * pBlockIncrement = pBuild->PBlockCreate(pProc, "finc");
 					pBuild->CreateBranch(pBlockPred);	
 
 					pBuild->ActivateBlock(pBlockPred);
@@ -6278,10 +6281,10 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 
 					EmitLocation(pWork, pBuild, pStnod->m_lexloc);
 
-					BUILD::Proc * pProc = pBuild->m_pProcCur;
-					BUILD::Block * pBlockPred = pBuild->PBlockCreate(pProc, "wpred");
-					BUILD::Block * pBlockBody = pBuild->PBlockCreate(pProc, "wbody");
-					BUILD::Block * pBlockPost = pBuild->PBlockCreate(pProc, "wpost");
+					typename BUILD::Proc * pProc = pBuild->m_pProcCur;
+					typename BUILD::Block * pBlockPred = pBuild->PBlockCreate(pProc, "wpred");
+					typename BUILD::Block * pBlockBody = pBuild->PBlockCreate(pProc, "wbody");
+					typename BUILD::Block * pBlockPost = pBuild->PBlockCreate(pProc, "wpost");
 					pBuild->CreateBranch(pBlockPred);	
 
 					pBuild->ActivateBlock(pBlockPred);
@@ -6319,7 +6322,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 				{
 					EmitLocation(pWork, pBuild, pStnod->m_lexloc);
 
-					BUILD::Value * pValRhs = nullptr;
+					typename BUILD::Value * pValRhs = nullptr;
 					if (pStnod->CStnodChild() == 1)
 					{
 						pValRhs = PValGenerate(pWork, pBuild, pStnod->PStnodChild(0), VALGENK_Instance);
@@ -6331,7 +6334,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 			case RWORD_Break:
 			case RWORD_Continue:
 				{
-					BUILD::Block * pBlock = nullptr;
+					typename BUILD::Block * pBlock = nullptr;
 					CString * pString = nullptr;
 					if (pStnod->m_pStident)
 					{
@@ -6393,7 +6396,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 			if (!EWC_FVERIFY(pTinproc, "expected type info procedure"))
 				return nullptr;
 	
-			CDynAry<BUILD::ProcArg *> arypLvalArgs(pBuild->m_pAlloc, EWC::BK_Stack);
+			CDynAry<typename BUILD::ProcArg *> arypLvalArgs(pBuild->m_pAlloc, EWC::BK_Stack);
 
 			size_t cStnodArgs = pStnod->CStnodChild() - 1; // don't count the identifier
 			for (size_t iStnodChild = 0; iStnodChild < cStnodArgs; ++iStnodChild)
@@ -6452,7 +6455,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 
 			auto pSymLeft = *ppSymMin;
 			++ppSymMin;
-			BUILD::Value * pValLhs = PValFromIdentifierSym(pWork, pBuild, pSymLeft, VALGENK_Reference);
+			typename BUILD::Value * pValLhs = PValFromIdentifierSym(pWork, pBuild, pSymLeft, VALGENK_Reference);
 			return PValGenerateSymbolPath(pWork, pBuild, pSymLeft->m_pTin, pValLhs, ppSymMin, ppSymMax, valgenk);
 
 #else
@@ -6525,7 +6528,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 					valgenkLhs = VALGENK_Instance;
 				}
 			}
-			BUILD::Value * pValLhs = PValGenerate(pWork, pBuild, pStnodLhs, valgenkLhs);
+			typename BUILD::Value * pValLhs = PValGenerate(pWork, pBuild, pStnodLhs, valgenkLhs);
 
 			// implicit array members don't have a symbol for the RHS
 			CString strMemberName = StrFromIdentifier(pStnod->PStnodChild(1));
@@ -6538,11 +6541,11 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 			if (pTinLhs && pTinLhs->m_tink == TINK_Literal)
 			{
 				auto pTinlit = (STypeInfoLiteral *)pTinLhs;
-				BUILD::Global ** ppGlob = pBuild->m_hashPTinlitPGlob.Lookup(pTinlit);
+				typename BUILD::Global ** ppGlob = pBuild->m_hashPTinlitPGlob.Lookup(pTinlit);
 				if (EWC_FVERIFY(ppGlob, "expected global instance for array literal"))
 				{
 					// BB - cleanup this (BUILD::Global *) cast
-					BUILD::Global * pGlobLit = (BUILD::Global *)*ppGlob;
+					auto pGlobLit = (typename BUILD::Global *)*ppGlob;
 
 					if (FIsArrayLiteral(pTinlit))
 					{
@@ -6575,12 +6578,12 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 			CSTNode * pStnodLhs = pStnod->PStnodChild(0);
 			CSTNode * pStnodIndex = pStnod->PStnodChild(1);
 
-			BUILD::Value * pValLhs;
+			typename BUILD::Value * pValLhs;
 			auto pValIndex = PValGenerate(pWork, pBuild, pStnodIndex, VALGENK_Instance);
 			if (!EWC_FVERIFY(!FIsNull(pValIndex), "null index llvm value"))
 				return nullptr;
 
-			BUILD::GepIndex * apLvalIndex[2] = {};
+			typename BUILD::GepIndex * apLvalIndex[2] = {};
 			TINK tinkLhs = PTinStripQualifiers(pStnodLhs->m_pTin)->m_tink;
 			int cpLvalIndex = 0;
 
@@ -6636,7 +6639,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 			auto pTinBool = pWork->m_pSymtab->PTinBuiltin(CSymbolTable::s_strBool);
 			auto pLtypeBool = pBuild->PLtypeFromPTin(pTinBool);
 
-			BUILD::Proc * pProc = pBuild->m_pProcCur;
+			typename BUILD::Proc * pProc = pBuild->m_pProcCur;
 			auto pBlockTrue = pBuild->PBlockCreate(pProc, "predTrue");
 			auto pBlockFalse = pBuild->PBlockCreate(pProc, "predFalse");
 			auto pBlockPost = pBuild->PBlockCreate(pProc, "predPost");
@@ -6669,7 +6672,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 				//BB - This won't work with generic procedure overloads
 				auto pSym = pTinproc->m_pStnodDefinition->PSym();
 
-				CDynAry<BUILD::ProcArg *> arypLvalArgs(pBuild->m_pAlloc, EWC::BK_Stack);
+				CDynAry<typename BUILD::ProcArg *> arypLvalArgs(pBuild->m_pAlloc, EWC::BK_Stack);
 				GenerateArguments(pWork, pBuild, pStnod->m_grfstnod, pTinproc, 2, pStnod->m_arypStnodChild.A(), &arypLvalArgs);
 				return pBuild->PValGenerateCall(pWork, pStnod, pSym, &arypLvalArgs, true, pTinproc, valgenk);
 			}
@@ -6677,13 +6680,13 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 			CSTNode * pStnodLhs = pStnod->PStnodChild(0);
 			CSTNode * pStnodRhs = pStnod->PStnodChild(1);
 
-			BUILD::Value * pValLhs = PValGenerate(pWork, pBuild, pStnodLhs, VALGENK_Reference);
+			typename BUILD::Value * pValLhs = PValGenerate(pWork, pBuild, pStnodLhs, VALGENK_Reference);
 			if (pStnod->m_tok == TOK('='))
 			{
 				if (pStnodLhs->m_pTin->m_tink == TINK_Flag)
 				{
 					STypeInfo * pTinLoose = nullptr;
-					BUILD::Constant * pConstEnum = PConstEnumLiteralFromStnod(pBuild, pStnodLhs, &pTinLoose);
+					typename BUILD::Constant * pConstEnum = PConstEnumLiteralFromStnod(pBuild, pStnodLhs, &pTinLoose);
 					EWC_ASSERT(pConstEnum, "failed to find constant for flag enum");
 
 					// set val: (n & ~flag) | (sext(rhs) & flag)
@@ -6740,8 +6743,8 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 					CSTNode * pStnodRhs = pStnod->PStnodChild(1);
 					auto pValRhs = PValGenerate(pWork, pBuild, pStnodRhs, VALGENK_Instance);
 
-					BUILD::Value * pValPtr;
-					BUILD::Value * pValIndex;
+					typename BUILD::Value * pValPtr;
+					typename BUILD::Value * pValIndex;
 					if (pTinLhs->m_tink == TINK_Pointer)
 					{
 						pValPtr = pValLhs;
@@ -6757,7 +6760,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 						pValIndex = pBuild->PInstCreate(IROP_NNeg, pValIndex, "NNeg");
 					}
 
-					BUILD::GepIndex * pGepIndex = pBuild->PGepIndexFromValue(pValIndex);
+					typename BUILD::GepIndex * pGepIndex = pBuild->PGepIndexFromValue(pValIndex);
 					auto pInstGep = pBuild->PInstCreateGEP(pValPtr, &pGepIndex, 1, "ptrGep");
 					return pInstGep; 
 				}
@@ -6797,7 +6800,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 				//BB - This won't work with generic procedure overloads
 				auto pSym = pTinproc->m_pStnodDefinition->PSym();
 
-				CDynAry<BUILD::ProcArg *> arypLvalArgs(pBuild->m_pAlloc, EWC::BK_Stack);
+				CDynAry<typename BUILD::ProcArg *> arypLvalArgs(pBuild->m_pAlloc, EWC::BK_Stack);
 				GenerateArguments(pWork, pBuild, pStnod->m_grfstnod, pTinproc, 2, pStnod->m_arypStnodChild.A(), &arypLvalArgs);
 				return pBuild->PValGenerateCall(pWork, pStnod, pSym, &arypLvalArgs, true, pTinproc, valgenk);
 			}
@@ -6828,11 +6831,11 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 				//BB - This won't work with generic procedure overloads
 				auto pSym = pTinproc->m_pStnodDefinition->PSym();
 
-				CDynAry<BUILD::ProcArg *> arypLvalArgs(pBuild->m_pAlloc, EWC::BK_Stack);
-				CDynAry<BUILD::Value *> arypValArgs(pBuild->m_pAlloc, EWC::BK_Stack);
+				CDynAry<typename BUILD::ProcArg *> arypLvalArgs(pBuild->m_pAlloc, EWC::BK_Stack);
+				CDynAry<typename BUILD::Value *> arypValArgs(pBuild->m_pAlloc, EWC::BK_Stack);
 				GenerateArguments(pWork, pBuild, pStnod->m_grfstnod, pTinproc, 1, pStnod->m_arypStnodChild.A(), &arypLvalArgs, &arypValArgs);
 
-				BUILD::Value * pValReturn = nullptr;
+				typename BUILD::Value * pValReturn = nullptr;
 				if (pStnod->m_park == PARK_PostfixUnaryOp)
 				{
 					pValReturn = pBuild->PInstCreate(IROP_Load, arypValArgs[0], "");
@@ -6864,7 +6867,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 			if (!EWC_FVERIFY((pTinOutput != nullptr) & (pTinOperand != nullptr), "bad cast"))
 				return nullptr;
 	
-			BUILD::Value * pValOp = nullptr;
+			typename BUILD::Value * pValOp = nullptr;
 
 			bool fIsSigned = true;
 			TINK tink = pTinOutput->m_tink;
@@ -6942,8 +6945,8 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 					if (!EWC_FVERIFY((pTinOutput == pTinOperand), "increment type mismatch (?)"))
 						return nullptr;
 			
-					BUILD::Instruction * pInstLoad = pBuild->PInstCreate(IROP_Load, pValOperand, "IncLoad");
-					BUILD::Instruction * pInstAdd = nullptr;
+					typename BUILD::Instruction * pInstLoad = pBuild->PInstCreate(IROP_Load, pValOperand, "IncLoad");
+					typename BUILD::Instruction * pInstAdd = nullptr;
 					switch (tink)
 					{
 					case TINK_Float:	
@@ -6971,7 +6974,7 @@ typename BUILD::Value * PValGenerate(CWorkspace * pWork, BUILD * pBuild, CSTNode
 						{
 							int nDelta = (pStnod->m_tok == TOK_PlusPlus) ? 1 : -1;
 							auto pConstDelta = pBuild->PConstInt(nDelta, 64, true);
-							BUILD::GepIndex * pGepIndex = pBuild->PGepIndexFromValue(pConstDelta);
+							typename BUILD::GepIndex * pGepIndex = pBuild->PGepIndexFromValue(pConstDelta);
 
 							auto pValLoad = pBuild->PInstCreate(IROP_Load, pValOperand, "incLoad");
 							pInstAdd = pBuild->PInstCreateGEP(pValLoad, &pGepIndex, 1, "incGep");
@@ -7388,7 +7391,7 @@ void CBuilderIR::SetupParamBlock(
 {
 	// set up llvm argument values for our formal parameters
 
-	auto pStproc = PStmapDerivedCast<CSTProcedure *>(pStnod->m_pStmap);
+	//auto pStproc = PStmapDerivedCast<CSTProcedure *>(pStnod->m_pStmap); // unused? (Jonas)
 	int cpStnodParam = pStnodParamList->CStnodChild();
 	int cpLvalParams = LLVMCountParams(pProc->m_pLval);
 
@@ -7471,7 +7474,7 @@ typename BUILD::Value * PValCodegenPrototype(CWorkspace * pWork, BUILD * pBuild,
 
 	CSTNode * pStnodParamList = nullptr;
 	CSTNode * pStnodReturn = nullptr;
-	CSTNode * pStnodName = nullptr;
+	// CSTNode * pStnodName = nullptr; // unused? (Jonas)
 	CSTNode * pStnodAlias = nullptr;
 	CSTNode * pStnodBody = nullptr;
 	auto pStproc = PStmapDerivedCast<CSTProcedure *>(pStnod->m_pStmap);
@@ -7479,13 +7482,13 @@ typename BUILD::Value * PValCodegenPrototype(CWorkspace * pWork, BUILD * pBuild,
 	{
 		pStnodParamList = pStnod->PStnodChildSafe(pStproc->m_iStnodParameterList);
 		pStnodReturn = pStnod->PStnodChildSafe(pStproc->m_iStnodReturnType);
-		pStnodName = pStnod->PStnodChildSafe(pStproc->m_iStnodProcName);
+		//pStnodName = pStnod->PStnodChildSafe(pStproc->m_iStnodProcName);
 		pStnodAlias = pStnod->PStnodChildSafe(pStproc->m_iStnodForeignAlias);
 		pStnodBody = pStnod->PStnodChildSafe(pStproc->m_iStnodBody);
 	}
 
-	bool fHasVarArgs = false;
-	CDynAry<BUILD::LType *> arypLtype(pBuild->m_pAlloc, EWC::BK_CodeGen);
+	//bool fHasVarArgs = false; // unused? (Jonas)
+	CDynAry<typename BUILD::LType *> arypLtype(pBuild->m_pAlloc, EWC::BK_CodeGen);
 	if (pStnodParamList && EWC_FVERIFY(pStnodParamList->m_park == PARK_ParameterList, "expected parameter list"))
 	{
 		int cpStnodParams = pStnodParamList->CStnodChild();
@@ -7494,7 +7497,7 @@ typename BUILD::Value * PValCodegenPrototype(CWorkspace * pWork, BUILD * pBuild,
 			CSTNode * pStnodDecl = pStnodParamList->PStnodChild(ipStnod);
 			if (pStnodDecl->m_park == PARK_VariadicArg)
 			{
-				fHasVarArgs = true;
+				//fHasVarArgs = true;
 				continue;
 			}
 
@@ -7513,7 +7516,7 @@ typename BUILD::Value * PValCodegenPrototype(CWorkspace * pWork, BUILD * pBuild,
 		}
 	}
 
-	BUILD::LType * pLtypeReturn = nullptr;
+	typename BUILD::LType * pLtypeReturn = nullptr;
 	if (pStnodReturn)
 	{
 		pLtypeReturn = pBuild->PLtypeFromPTin(pStnodReturn->m_pTin);
@@ -7552,7 +7555,7 @@ typename BUILD::Value * PValCodegenPrototype(CWorkspace * pWork, BUILD * pBuild,
 
 	if (pValProc->m_valk == VALK_Procedure && !pTinproc->m_grftinproc.FIsSet(FTINPROC_IsForeign))
 	{
-		auto pProc = (BUILD::Proc *)pValProc;
+		auto pProc = (typename BUILD::Proc *)pValProc;
 		pBuild->ActivateProc(pProc, (pTinproc->m_grftinproc.FIsSet(FTINPROC_IsForeign)) ? pBlockPrev : pProc->m_pBlockLocals);
 		if (pStnodParamList)
 		{
@@ -7612,8 +7615,8 @@ void CodeGenEntryPoints(
 	CAry<SWorkspaceEntry *> * parypEntryOrder,
 	typename BUILD::Proc ** ppProcUnitTest)
 {
-	CAlloc * pAlloc = pWork->m_pAlloc;
-	BUILD::Proc * pProcImplicit = nullptr;
+	//CAlloc * pAlloc = pWork->m_pAlloc; // unused? (Jonas)
+	typename BUILD::Proc * pProcImplicit = nullptr;
 
 	CDynAry<CSTNode *> arypStnodUnitTest(pWork->m_pAlloc, BK_UnitTest, (int)parypEntryOrder->C());	// entry points from unit tests that are not procedure definitions
 
@@ -7752,8 +7755,8 @@ void CBuilderIR::FinalizeBuild(CWorkspace * pWork)
 
 int NExecuteAndWait(
 	const char * pChzProgram,
-	const char ** ppChzArgs,
-	const char ** ppChzEnvp,
+	llvm::ArrayRef<llvm::StringRef> ppChzArgs,
+	llvm::ArrayRef<llvm::StringRef> rChzEnvp,
 	unsigned tWait,
 	unsigned cBMemoryLimit,
 	EWC::CString * pStrError,
@@ -7764,8 +7767,8 @@ int NExecuteAndWait(
 	int nReturn = llvm::sys::ExecuteAndWait(
 								strrProgram, 
 								ppChzArgs, 
-								ppChzEnvp,
-			                    0, 	// const StringRef ** ppStrrRedirects
+								rChzEnvp,
+			                    llvm::ArrayRef< llvm::Optional< llvm::StringRef >>(), 	// const StringRef ** ppStrrRedirects
 			                    tWait,
 			                    cBMemoryLimit,
 			                    &strError,

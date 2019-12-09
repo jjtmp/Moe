@@ -637,7 +637,7 @@ CSTNode * PStnodParseExpressionList(
 
 		while (FConsumeToken(pLex, TOK(',')))
 		{
-			CSTNode * pStnodLabel = nullptr;
+	//		CSTNode * pStnodLabel = nullptr;
 
 			pStnodExp = PStnodParseExpression(pParctx, pLex, grfexp);
 
@@ -924,7 +924,7 @@ void ParseArgumentList(CParseContext * pParctx, SLexer * pLex, CSTNode * pStnodA
 	while (1)
 	{
 		CSTNode * pStnodLabel = nullptr;
-		const char * pCozLabel = "error";
+	//	const char * pCozLabel = "error";
 		CSTNode * pStnodBaked = nullptr;
 		if (grfarglist.FIsSet(FARGLIST_AllowGenericValues))
 		{
@@ -953,7 +953,7 @@ void ParseArgumentList(CParseContext * pParctx, SLexer * pLex, CSTNode * pStnodA
 				}
 				else
 				{
-					pCozLabel = StrFromIdentifier(pStnodIdent).PCoz();
+	//				pCozLabel = StrFromIdentifier(pStnodIdent).PCoz();
 					pStnodLabel->IAppendChild(pStnodIdent);
 				}
 
@@ -1882,7 +1882,7 @@ CSTNode * PStnodParseTypeSpecifier(CParseContext * pParctx, SLexer * pLex, const
 	{
 		if (FConsumeToken(pLex, TOK('(')))
 		{
-			CSymbolTable * pSymtabParent = pParctx->m_pSymtab;
+	//		CSymbolTable * pSymtabParent = pParctx->m_pSymtab;
 			SLexerLocation lexloc(pLex);
 
 			CSTNode * pStnodStructInst = EWC_NEW(pParctx->m_pAlloc, CSTNode) CSTNode(pParctx->m_pAlloc, lexloc);
@@ -5273,7 +5273,7 @@ STypeInfo * CUniqueTypeRegistry::PTinMakeUnique(STypeInfo * pTin)
 			} break;
 		case TINK_Struct:
 			{
-				auto pTinstruct = (STypeInfoStruct *)pTin;
+	//			auto pTinstruct = (STypeInfoStruct *)pTin;
 			} break;
 
 		default:
@@ -5371,10 +5371,10 @@ CSTNode::CSTNode(CAlloc * pAlloc, const SLexerLocation & lexLoc)
 ,m_pOptype(nullptr)
 ,m_pSymtab(nullptr)
 ,m_pSymbase(nullptr)
-,m_arypStnodChild(pAlloc, EWC::BK_SyntaxTree)
 #if TRACK_IINSREQ
 ,m_iInsreq(-1)
 #endif
+,m_arypStnodChild(pAlloc, EWC::BK_SyntaxTree) // reordered (Jonas)
 {
 }
 

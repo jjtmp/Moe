@@ -19,6 +19,9 @@
 #include "EwcHash.h"
 #include "EwcString.h"
 
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/APInt.h" //ArrayRef
+
 struct LLVMOpaqueBasicBlock;
 struct LLVMOpaqueBuilder;
 struct LLVMOpaqueDIBuilder;
@@ -639,8 +642,8 @@ void CodeGenEntryPointsBytecode(
 
 int NExecuteAndWait(
 	const char * pChzProgram,
-	const char ** ppChzArgs,
-	const char ** ppChzEnvp,
+	llvm::ArrayRef<llvm::StringRef> rChzArgs,
+	llvm::ArrayRef<llvm::StringRef> rChzEnvp,
 	unsigned tWait,
 	unsigned cBMemoryLimit,
 	EWC::CString * pStrError,

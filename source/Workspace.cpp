@@ -115,7 +115,7 @@ void PrintGenericInstantiateContext(SErrorManager * pErrman)
 {
 	for (SGenericMap ** ppGenmap = pErrman->m_arypGenmapContext.A(); ppGenmap != pErrman->m_arypGenmapContext.PMac(); ++ppGenmap)
 	{
-		auto pGenmap = *ppGenmap;
+	//	auto pGenmap = *ppGenmap;
 		printf("  while instantiating generic ");	
 		PrintGenmap(pErrman->m_pWork, *ppGenmap);
 	}

@@ -15,15 +15,15 @@
 
 #include "ByteCode.h"
 #include "CodeGen.h"
-#include "parser.h"
+#include "Parser.h"
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include "Util.h"
-#include "workspace.h"
-#include "dyncall\dynload\dynload.h"
-#include "dyncall\dyncall\dyncall.h"
-#include "dyncall\dyncall\dyncall_signature.h"
+#include "Workspace.h"
+#include "dynload/dynload.h"
+#include "dyncall/dyncall.h"
+#include "dyncall/dyncall_signature.h"
 
 // Remaining bytecode tasks
 // [ ] Clean up remaining TBDs
@@ -389,8 +389,8 @@ SProcedure::SProcedure(EWC::CAlloc * pAlloc)
 
 CBuilder::CBuilder(CWorkspace * pWork, SDataLayout * pDlay, EWC::CHash<HV, void*> * pHashHvPFnForeign)
 :CBuilderBase(pWork)
-,m_pSymtab(pWork->m_pSymtab)
 ,m_pAlloc(pWork->m_pAlloc)
+,m_pSymtab(pWork->m_pSymtab)
 ,m_pBerrctx(nullptr)
 ,m_pDlay(pDlay)
 ,m_hashHvMangledPProc(pWork->m_pAlloc, BK_ByteCodeCreator, 256)
@@ -531,7 +531,7 @@ void CBuilder::SetupParamBlock(
 	EWC::CDynAry<LType *> * parypLtype)
 {
 	// BB - Could we merge this with the CodeGen version?
-	auto pStproc = PStmapDerivedCast<CSTProcedure *>(pStnod->m_pStmap);
+//	auto pStproc = PStmapDerivedCast<CSTProcedure *>(pStnod->m_pStmap);
 	auto pProcsig = pProc->m_pProcsig;
 	int cpStnodParam = pStnodParamList->CStnodChild();
 
@@ -801,8 +801,8 @@ void CDataSegment::AllocateData(size_t cB, size_t cBAlign, u8 ** ppB, s64 * piB,
 {
 	size_t cBAlignment = 0;
 	size_t cBStride = EWC::CBAlign(cB, cBAlign);
-	auto cBPrev = (m_pDatabCur) ? m_pDatabCur->m_cB : 0;
-	bool fAdded = false;
+//	auto cBPrev = (m_pDatabCur) ? m_pDatabCur->m_cB : 0;
+//	bool fAdded = false;
 	if (m_pDatabCur == nullptr)
 	{
 		EWC_ASSERT(m_pDatabFirst == nullptr, "bad data block init");
@@ -820,7 +820,7 @@ void CDataSegment::AllocateData(size_t cB, size_t cBAlign, u8 ** ppB, s64 * piB,
 		}
 		else
 		{
-			fAdded = true;
+//			fAdded = true;
 			m_pDatabCur->m_cB += cBAlignment;
 		}
 	}
@@ -1071,15 +1071,15 @@ void CBuilder::PrintDump()
 
 	SProcedure ** ppProc;
 	EWC::CHash<HV, SProcedure *>::CIterator iter(&m_hashHvMangledPProc);
-	while (ppProc = iter.Next())
+	while ((ppProc = iter.Next()))
 	{
 		auto pProc = *ppProc;
 		auto pProcsig = pProc->m_pProcsig;
 		printf("%s()\t\t\t\t\tcBStack=%lld, cBGlobal=%lld, cBArg=%lld\n",
 			pProcsig->m_pTinproc->m_strName.PCoz(),
-			pProc->m_cBStack,
-			m_dataseg.CB(),
-			pProcsig->m_cBArgNamed);
+			(long long int) pProc->m_cBStack,
+			(long long int) m_dataseg.CB(),
+			(long long int) pProcsig->m_cBArgNamed);
 		auto pInstMac = pProc->m_aryInst.PMac();
 
 		auto aInst = pProc->m_aryInst.A();
@@ -1416,7 +1416,7 @@ CBuilder::Instruction * CBuilder::PInstCreateGEP(SValue * pValLhs, SValue ** apL
 	pInstGep->m_irop =  IROP_GEP;	
 	SetOperandFromValue(m_pDlay, pValLhs, &pInstGep->m_opkLhs, &pInstGep->m_wordLhs, OPSZ_Ptr, &valout);
 
-	auto pInstval = pInstvalGep;
+//	auto pInstval = pInstvalGep;
 	STypeInfo * pTin = valout.m_pTin;
 
 	u64 cB;
@@ -1792,7 +1792,7 @@ void CBuilder::SetInitializer(BCode::SValue * pValGlob, BCode::SValue * pValInit
 	if (pConstInit->m_opk == OPK_Global)
 	{
 		auto pTinptrGlob = PTinRtiCast<STypeInfoPointer *>(pConstGlob->m_pTin);
-		auto pTinDst = pTinptrGlob->m_pTinPointedTo;
+	//	auto pTinDst = pTinptrGlob->m_pTinPointedTo;
 		
 		{
 			auto pIGlobIndex = (s32*)m_dataseg.PBFromIndex(pConstGlob->m_word.m_s32);
@@ -1805,7 +1805,7 @@ void CBuilder::SetInitializer(BCode::SValue * pValGlob, BCode::SValue * pValInit
 	else if (pConstInit->m_opk == OPK_GlobalVal)
 	{
 		auto pTinptrGlob = PTinRtiCast<STypeInfoPointer *>(pConstGlob->m_pTin);
-		auto pTinDst = pTinptrGlob->m_pTinPointedTo;
+	//	auto pTinDst = pTinptrGlob->m_pTinPointedTo;
 
 		auto pIGlobIndex = (s32*)m_dataseg.PBFromIndex(pConstGlob->m_word.m_s32);
 		s32 iBSrc = pConstInit->m_word.m_s32;
@@ -1848,7 +1848,7 @@ SInstructionValue * CBuilder::PInstCreateCall(SValue * pValProc, STypeInfoProced
 	if (!EWC_FVERIFY(pProcsig, "procedure signature was not computed"))
 		return PInstCreateError();
 
-	s32 iBStackReturnStore = 0;
+//	s32 iBStackReturnStore = 0;
 	auto cBArg = pProcsig->m_cBArgNamed;
 
 	s64 cArgVariadic = 0;
@@ -1953,7 +1953,7 @@ void CBuilder::CreateReturn(SValue ** apVal, int cpVal, const char * pChzName)
 	}
 
 	auto pProcsig = m_pProcCur->m_pProcsig;
-	auto pTinproc = pProcsig->m_pTinproc;
+//	auto pTinproc = pProcsig->m_pTinproc;
 	for (int iReturn = 0; iReturn < cpVal; ++iReturn)
 	{
 		// add the returnIdx(callee relative) stored as an argument to (cBArg + cBStack)
@@ -1962,15 +1962,15 @@ void CBuilder::CreateReturn(SValue ** apVal, int cpVal, const char * pChzName)
 		// BB - doesn't take variadic args into account
 		auto pInstOffset = PInstCreateRaw(IROP_NAdd, PRegArg(pProcsig->m_aParamRet[0].m_iBStack, 32), PConstArg(pProcsig->m_cBArgNamed, 32));
 
-		auto pInstval = (SInstructionValue *)apVal[iReturn];
+	//	auto pInstval = (SInstructionValue *)apVal[iReturn];
 		(void) PInstCreateStoreToIdx(pInstOffset, apVal[iReturn]);
 	}
 
-	s32 cBReturnOp = 0;
-	if (!pTinproc->m_arypTinReturns.FIsEmpty())
-	{
-		cBReturnOp = pProcsig->m_aParamRet[0].m_cB;
-	}
+//	s32 cBReturnOp = 0;
+//	if (!pTinproc->m_arypTinReturns.FIsEmpty())
+//	{
+//		cBReturnOp = pProcsig->m_aParamRet[0].m_cB;
+//	}
 
 	PInstCreateRaw(IROP_Ret, 0, PConstArg(pProcsig->m_cBArgNamed, 32), PConstArg(0, 32));
 }
@@ -2045,7 +2045,7 @@ SValue * CBuilder::PValFromSymbol(SSymbol * pSym)
 
 	if (pVal && pVal->m_valk == VALK_Instruction)
 	{
-		IROP irop = ((SInstructionValue *)pVal)->m_pInst->m_irop;
+//		IROP irop = ((SInstructionValue *)pVal)->m_pInst->m_irop;
 	}
 
 	return pVal;
@@ -3740,7 +3740,7 @@ void ExecuteBytecode(CVirtualMachine * pVm, SProcedure * pProcEntry)
 			s32 cBStack = pInst->m_wordRhs.m_s32;
 			SInstruction ** ppInstRet = (SInstruction **)(pVm->m_pBStack + cBStack);
 
-			auto pBStack = pVm->m_pBStack;
+	//		auto pBStack = pVm->m_pBStack;
 			pVm->m_pBStack += pInst->m_wordLhs.m_s32; // cBArgNamed + cBStack
 
 			auto pProcsigCur = pVm->m_pProcCurDebug->m_pProcsig;

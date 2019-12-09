@@ -20,7 +20,7 @@
 #include "EwcArray.h"
 #include "EwcHash.h"
 #include "EwcString.h"
-#include "typeinfo.h"
+#include "TypeInfo.h"
 
 
 typedef struct DCCallVM_ DCCallVM;

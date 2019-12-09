@@ -144,9 +144,21 @@ void AssertHandler( const char* pChzFile, u32 line, const char* pChzCondition, c
 	)\
   )\
 )
+#elif defined( __GNUC__ )
+#define EWC_FVERIFY_PROC( PREDICATE, ASSERTPROC, FILE, LINE, ...)\
+(\
+  ( ( PREDICATE ) ? \
+    true :\
+    ({\
+      ASSERTPROC( __FILE__, __LINE__, #PREDICATE, __VA_ARGS__ );\
+      EWC_DEBUG_BREAK(); \
+      false;\
+    })\
+  )\
+)
 #else
 // use a goofy expression statement to play nice with clang
-#define EWC_FVERIFY( PREDICATE, ... )\
+#define EWC_FVERIFY_PROC( PREDICATE, ... )\
 (\
   ( ( PREDICATE ) ? \
 	true :\
@@ -1605,15 +1617,15 @@ size_t	CBCopyCoz(const char * pCozSource, char * aCoDest, size_t cBDest)
 
 void FormatCoz(SStringBuffer * pStrbuf, const char * pCozFormat, ...)
 {
-	ptrdiff_t cBMax = &pStrbuf->m_pCozBegin[pStrbuf->m_cBMax] - pStrbuf->m_pCozAppend;
+	std::ptrdiff_t cBMax = &pStrbuf->m_pCozBegin[pStrbuf->m_cBMax] - pStrbuf->m_pCozAppend;
 	if (cBMax > 1)
 	{
 		va_list ap;
 		va_start(ap, pCozFormat);
 #ifdef WIN32
-		ptrdiff_t cCh = vsnprintf_s(pStrbuf->m_pCozAppend, cBMax, _TRUNCATE, pCozFormat, ap);
+		std::ptrdiff_t cCh = vsnprintf_s(pStrbuf->m_pCozAppend, cBMax, _TRUNCATE, pCozFormat, ap);
 #else
-		ptrdiff_t cCh = vsnprintf(pStrbuf->m_pCozAppend, cBMax, pCozFormat, ap);
+		std::ptrdiff_t cCh = vsnprintf(pStrbuf->m_pCozAppend, cBMax, pCozFormat, ap);
 		pStrbuf->m_pCozAppend[cBMax-1] = 0;
 #endif
 		va_end(ap);

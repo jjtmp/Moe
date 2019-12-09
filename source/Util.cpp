@@ -2,7 +2,7 @@
 
 #include "EwcTypes.h"
 #include <algorithm>
-
+#include <string.h> // memmove()
 
 
 namespace Puny
@@ -17,7 +17,7 @@ namespace Puny
 	static const int s_cWrapInitial = 0x80;
 	static const u32 s_nU32Max = 0xFFFFFFFF;
 
-	ptrdiff_t NAdaptBias(ptrdiff_t nDelta, ptrdiff_t cPoint, bool fFirstTime)
+	std::ptrdiff_t NAdaptBias(std::ptrdiff_t nDelta, std::ptrdiff_t cPoint, bool fFirstTime)
 	{
 		if (fFirstTime) nDelta = nDelta / s_nDamp;
 		else			nDelta = nDelta / 2;
@@ -207,8 +207,8 @@ PUNYRET PunyretEncode(const char * pCozInput, char * pCozOut, size_t cBMaxOut)
 			}
 		}
 	}
-	ptrdiff_t cBasic = pCozDest - pCozOut;
-	ptrdiff_t cHandled = pCozDest - pCozOut;
+	std::ptrdiff_t cBasic = pCozDest - pCozOut;
+	std::ptrdiff_t cHandled = pCozDest - pCozOut;
 
 	// BB - would like to change this to only add a delimiter when we have extended characters (or another delimiter)
 	if ((pNExt - aNExtSorted) != 0 || fFoundDelimiter)
@@ -224,12 +224,12 @@ PUNYRET PunyretEncode(const char * pCozInput, char * pCozOut, size_t cBMaxOut)
 
 	std::sort(aNExtSorted, pNExt);
 
-	ptrdiff_t nDelta = 0;
-	ptrdiff_t cWrap = s_cWrapInitial;
-	ptrdiff_t nBias = s_nBiasInitial;
+	std::ptrdiff_t nDelta = 0;
+	std::ptrdiff_t cWrap = s_cWrapInitial;
+	std::ptrdiff_t nBias = s_nBiasInitial;
 
 	int * pNWorkMax = pN;
-	ptrdiff_t cCodepoint = pNWorkMax - aNWork;
+	std::ptrdiff_t cCodepoint = pNWorkMax - aNWork;
 
 	int iSorted = 0;
 	while (cHandled < cCodepoint)
@@ -251,7 +251,7 @@ PUNYRET PunyretEncode(const char * pCozInput, char * pCozOut, size_t cBMaxOut)
 			}
 			else if (nC == cWrap)
 			{
-				ptrdiff_t nQ = nDelta;
+				std::ptrdiff_t nQ = nDelta;
 				for (int nK = s_nBase; 1; nK += s_nBase)
 				{
 					int t = EWC::ewcMax(EWC::ewcMin(int(nK - nBias), s_nTMax), s_nTMin);
@@ -328,7 +328,7 @@ PUNYRET PunyretDecode(const char * pCozInput, char * pCozOut, size_t cBOutMax)
 	if (!fAllBasic)	// skip the delimiter
 		++pCoz;
 
-	ptrdiff_t cWrap = s_cWrapInitial; // aka 'n'
+	std::ptrdiff_t cWrap = s_cWrapInitial; // aka 'n'
 	u32 iPrev;
 	u32 iN = 0;
 	size_t nBias = s_nBiasInitial;
@@ -371,7 +371,7 @@ PUNYRET PunyretDecode(const char * pCozInput, char * pCozOut, size_t cBOutMax)
 
 	    // iN was supposed to wrap around from out+1 to 0, incrementing n each time, so we'll fix that now:
 
-		ptrdiff_t dWrap = iN / (cNOut + 1);
+		std::ptrdiff_t dWrap = iN / (cNOut + 1);
 	    if (dWrap > s_nU32Max  - cWrap) 
 			return PUNYRET_Overflow;
 	    cWrap += dWrap;

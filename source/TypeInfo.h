@@ -49,7 +49,7 @@
 #include "BigMath.h"
 #include "EwcArray.h"
 #include "EwcString.h"
-#include "lexer.h"
+#include "Lexer.h"
 
 class CIRGlobal;
 class CSTNode;
@@ -120,8 +120,8 @@ struct STypeInfo	// tag = tin
 						,m_grftin(FTIN_None)
 						,m_scopid(scopid)
 						,m_strName(strName)
-						,m_strDebug()
 						,m_strDesc()
+						,m_strDebug() // Jonas: move this -> can cause problems.
 						,m_pCgvalDIType(nullptr)
 						,m_pCgvalReflectGlobal(nullptr)
 						,m_pTinNative(nullptr)
@@ -509,8 +509,9 @@ struct STypeInfoArray : public STypeInfo	// tag = tinary
 					,m_pTin(nullptr)
 					,m_pTinstructImplicit(nullptr)
 					,m_c(0)
-					,m_aryk(ARYK_Fixed)
 					,m_pStnodBakedDim(nullptr)
+//https://stackoverflow.com/questions/30364585/will-be-initialized-after-wreorder
+					,m_aryk(ARYK_Fixed) // Jonas: moved -> can cause problems
 					{ ; }
 
 	STypeInfo *			m_pTin;

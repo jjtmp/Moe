@@ -28,6 +28,10 @@
 #include "WindowsStub.h"
 #endif
 
+#include <unistd.h> // getcwd()
+
+#include "llvm/Support/Program.h" // If you don't use this, you get a weird compiler error: Main.cpp:589:39: error: variable ‘llvm::ArrayRef<llvm::StringRef> as’ has initializer but incomplete type
+
 using namespace EWC;
 
 extern void PathSplitDestructive(char * pCozFull, size_t cBMax, const char ** ppCozPath, const char ** ppCozFile, const char ** ppCozExt);
@@ -336,36 +340,25 @@ int main(int cpChzArg, const char * apChzArg[])
 		bool fWantsLink = (comline.FHasCommand("-nolink") == false) && grfcompile.FIsSet(FCOMPILE_Native);
 		if (fSuccess && fWantsLink)
 		{
-			CDynAry<const char *> arypChzOptions(&alloc, BK_Linker, 32);
+			CDynAry<llvm::StringRef> arypChzOptions(&alloc, BK_Linker, 32);
 
 			static const char * s_pChzPathDebug = "/Debug";
 			static const char * s_pChzPathRelease = "/Release";
 			const char * pChzMoeLibOpt = (work.m_optlevel == OPTLEVEL_Release) ? s_pChzPathRelease : s_pChzPathDebug;
 
-			arypChzOptions.Append("link"); // first option (name of exe) is ignored
+			arypChzOptions.Append(llvm::StringRef("link")); // first option (name of exe) is ignored
 
 			if (work.m_optlevel == OPTLEVEL_Release)
 			{
-				static const char * s_aChzOptimizedDebug[] =
-				{
-					#if _WINDOWS
-					"/debug",
-					"/incremental:no",
-					#else // POSIX
-					#endif
-				};
-
-				arypChzOptions.Append(s_aChzOptimizedDebug, EWC_DIM(s_aChzOptimizedDebug));
+				#if _WINDOWS
+				arypChzOptions.Append(llvm::StringRef("/debug"));
+				arypChzOptions.Append(llvm::StringRef("/incremental:no"));
+				#endif
 			}
 			else
 			{
 				#if _WINDOWS
-				static const char * s_aChzOptimizedRelease[] =
-				{
-					"/debug",
-				};
-
-				arypChzOptions.Append(s_aChzOptimizedRelease, EWC_DIM(s_aChzOptimizedRelease));
+				arypChzOptions.Append(llvm::StringRef("/debug"));
 				#endif
 			}
 
@@ -413,21 +406,21 @@ int main(int cpChzArg, const char * apChzArg[])
 				pChzLinkerFull = (comline.FHasCommand("-useLLD")) ? s_pChzCommandLld : s_pChzCommand; 
 
 				static const char * s_pChzMoeLibBit = "/x64";
-				static const char * s_apChzCommand[] = 
+				static const StringRef * s_apChzCommand[] = 
 				{
 					#if _WINDOWS
-					"/subsystem:console",
-					"/machine:x64",
-					"/nologo",
-					"/NODEFAULTLIB:MSVCRT.lib",
-					"/NODEFAULTLIB:MSVCRTD.lib",
-					"/NODEFAULTLIB:LIBCMTD.lib",
+					llvm::StringRef("/subsystem:console"),
+					llvm::StringRef("/machine:x64"),
+					llvm::StringRef("/nologo"),
+					llvm::StringRef("/NODEFAULTLIB:MSVCRT.lib"),
+					llvm::StringRef("/NODEFAULTLIB:MSVCRTD.lib"),
+					llvm::StringRef("/NODEFAULTLIB:LIBCMTD.lib"),
 					#else // POSIX
-					"-arch",
-					"x86_64",
-					"-macosx_version_min",
-					"10.11", 
-					"-lm",
+					llvm::StringRef("-arch"),
+					llvm::StringRef("x86_64"),
+					llvm::StringRef("-macosx_version_min"),
+					llvm::StringRef("10.11"), 
+					llvm::StringRef("-lm"),
 					#endif
 				};
 
@@ -578,23 +571,22 @@ int main(int cpChzArg, const char * apChzArg[])
 				//arypChzOptions.Append(s_apChzDefaultPaths[ipChz]);
 			}
 
-			arypChzOptions.Append(nullptr);
+			//arypChzOptions.Append(nullptr); // ?? (Jonas)
 			printf("link: \n\"%s\" ",pChzLinkerFull);
-			//for (const char ** ppChzIt = &arypChzOptions[1]; ppChzIt != arypChzOptions.PMac(); ++ppChzIt)
-			for (const char ** ppChzIt = &arypChzOptions[1]; *ppChzIt; ++ppChzIt)
+			for (int i = 1; i < arypChzOptions.C(); i++)
 			{
-				printf("%s ", *ppChzIt);
+				printf("%s ", arypChzOptions[i].data());
 			}
 			printf("\n");
 
 			EWC::CString strError;
 			bool fFailed;
 
-			arypChzOptions.Append(nullptr);
+//			arypChzOptions.Append(nullptr); // ?? (Jonas)
 	    	int nResult = NExecuteAndWait(
 				    		pChzLinkerFull,
-							arypChzOptions.A(),
-							nullptr, // ppChzEnvp,
+							llvm::ArrayRef<llvm::StringRef>(arypChzOptions.A(), arypChzOptions.C()),
+							{}, // ppChzEnvp,
 							0,	// no timeout
 							0,	// no memory limit
 							&strError,

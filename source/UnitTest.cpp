@@ -407,7 +407,7 @@ SOption * POptParse(STestContext * pTesctx, SLexer * pLex)
 	const char * pCozErridMax = nullptr;
 
 	EWC::CFixAry<ERRID, s_cErridOptionMax> aryErrid;
-	ERRID errid = ERRID_Nil;
+//	ERRID errid = ERRID_Nil;
 	while (pLex->m_tok != TOK('|') && pLex->m_tok != TOK(')'))
 	{
 		if (pLex->m_tok == TOK('?'))
