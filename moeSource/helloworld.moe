@@ -1,0 +1,9 @@
+#import "basic"
+
+main proc () -> int 
+{
+	printf("Hello, World! (1)\n")
+	// printf("German: %s\n", 2) // <- SEGV because this gets a printf("German: %s\n") system call
+	return 3
+}
+
