@@ -144,9 +144,9 @@ NCmpCoz proc (pCozA: & const u8, pCozB: & const u8) -> int
 	return 0
 }
 
-FAreCozEqual proc (pChzA: & const u8, pChzB: & const u8) -> bool
-{
-	return NCmpCoz(pChzA, pChzB) == 0
-}
+//FAreCozEqual proc (pChzA: & const u8, pChzB: & const u8) -> bool
+//{
+//	return NCmpCoz(pChzA, pChzB) == 0
+//}
 
-		
+
